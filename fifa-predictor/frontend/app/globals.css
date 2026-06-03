@@ -1,0 +1,63 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-syne: 'Syne', sans-serif;
+  --font-dm-sans: 'DM Sans', sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background-color: #0A0F1C;
+  color: #F1F5F9;
+  font-family: var(--font-dm-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.light body {
+  background-color: #F8FAFC;
+  color: #0F172A;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #111827; }
+::-webkit-scrollbar-thumb { background: #263347; border-radius: 3px; }
+
+/* Animated probability bar */
+.prob-bar { animation: barFill 1s cubic-bezier(.25,.46,.45,.94) forwards; }
+@keyframes barFill { from { width: 0 } }
+
+/* Card hover glow */
+.card-hover {
+  transition: border-color .2s, transform .2s, box-shadow .2s;
+}
+.card-hover:hover {
+  border-color: rgba(59,130,246,.45) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0,0,0,.4);
+}
+
+/* Skeleton loader */
+.skeleton {
+  background: linear-gradient(90deg, #1A2235 25%, #1E2B42 50%, #1A2235 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: 6px;
+}
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+/* Bracket connector lines */
+.bracket-line::after {
+  content: '';
+  position: absolute;
+  right: -16px;
+  top: 50%;
+  width: 16px;
+  height: 1px;
+  background: #263347;
+}
