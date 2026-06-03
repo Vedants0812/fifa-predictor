@@ -1,26 +1,27 @@
 'use client';
 import { useState } from 'react';
-import useSWR, { mutate } from 'swr';
-import { fetcher } from '@/app/lib/api';
+import useSWR from 'swr';
 import type { TournamentResult, KOMatch } from '@/app/lib/api';
 import { RefreshCw, Trophy } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const TEAMS_MAP: Record<string, { name: string; flag: string }> = {};
 
+const apiFetcher = (url: string) =>
+  fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api${url}`).then(r => r.json());
+
 function useTeams() {
-  const { data } = useSWR<{ teams: any[] }>('/teams', fetcher);
+  const { data } = useSWR<{ teams: any[] }>('/teams', apiFetcher);
   if (data?.teams) {
     data.teams.forEach((t: any) => { TEAMS_MAP[t.id] = { name: t.name, flag: t.flag }; });
   }
 }
 
-function BracketMatch({ match, label }: { match: KOMatch; label?: string }) {
+function BracketMatch({ match }: { match: KOMatch }) {
   const ta = TEAMS_MAP[match.team_a] ?? { name: match.team_a, flag: '🏳️' };
   const tb = TEAMS_MAP[match.team_b] ?? { name: match.team_b, flag: '🏳️' };
   return (
     <div className="bg-surface border border-border2 rounded-xl w-[175px] overflow-hidden hover:border-primary/40 transition-colors">
-      {label && <div className="text-[9px] text-muted px-2 pt-1.5 uppercase tracking-wider">{label}</div>}
       <div className={`flex justify-between items-center px-3 py-2 border-b border-border text-[12px] ${match.winner === match.team_a ? 'font-bold text-white' : 'text-muted'}`}>
         <span>{ta.flag} {ta.name}</span>
         <span className={match.winner === match.team_a ? 'text-primary font-bold' : ''}>{match.score_a}</span>
@@ -52,10 +53,10 @@ export default function BracketPage() {
 
   const { data, isLoading } = useSWR<TournamentResult>(
     `/simulate-tournament?seed=${seed}`,
-    fetcher
+    apiFetcher
   );
 
-  const resimulate = async () => {
+  const resimulate = () => {
     setSimulating(true);
     setSeed(Math.floor(Math.random() * 999999));
     setTimeout(() => setSimulating(false), 900);
@@ -67,7 +68,6 @@ export default function BracketPage() {
 
   return (
     <div className="max-w-[1400px] mx-auto px-6 md:px-8 py-12">
-      {/* Header */}
       <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
         <div>
           <h1 className="font-head font-extrabold text-3xl mb-1">Tournament Bracket</h1>
@@ -83,12 +83,11 @@ export default function BracketPage() {
         </button>
       </div>
 
-      {/* Match count pills */}
       {counts && (
         <div className="flex flex-wrap gap-2 mb-8">
           {Object.entries(counts).filter(([k]) => k !== 'total').map(([k, v]) => (
             <span key={k} className="text-[11px] bg-surface border border-border2 px-3 py-1 rounded-full text-subtle">
-              {k.replace(/_/g, ' ')}: <strong className="text-white">{v}</strong>
+              {k.replace(/_/g, ' ')}: <strong className="text-white">{String(v)}</strong>
             </span>
           ))}
           <span className="text-[11px] bg-primary/15 border border-primary/30 px-3 py-1 rounded-full text-primary font-bold">
@@ -97,7 +96,6 @@ export default function BracketPage() {
         </div>
       )}
 
-      {/* Champion card */}
       {champ && (
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -110,17 +108,16 @@ export default function BracketPage() {
           <div className="font-head font-extrabold text-4xl mb-2">{champ.name}</div>
           <div className="text-subtle text-[14px]">
             Championship probability: <span className="text-accent font-bold">{champ.championship_probability}%</span>
-            {data?.runner_up && (
+            {data?.runner_up?.name && (
               <> · Runner-up: <span className="text-white">{data.runner_up.flag} {data.runner_up.name}</span></>
             )}
-            {data?.third_place && (
+            {data?.third_place?.name && (
               <> · 3rd: <span className="text-white">{data.third_place.flag} {data.third_place.name}</span></>
             )}
           </div>
         </motion.div>
       )}
 
-      {/* Bracket */}
       {isLoading || simulating ? (
         <div className="flex items-center justify-center h-64 text-muted">
           <RefreshCw size={24} className="animate-spin mr-3" />
@@ -139,7 +136,6 @@ export default function BracketPage() {
         </div>
       ) : null}
 
-      {/* Group Standings */}
       {data?.standings && (
         <div className="mt-16">
           <h2 className="font-head font-bold text-xl mb-6">Group Stage Standings</h2>

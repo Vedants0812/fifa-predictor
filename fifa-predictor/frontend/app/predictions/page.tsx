@@ -1,20 +1,21 @@
 'use client';
 import { useState } from 'react';
 import useSWR from 'swr';
-import { fetcher } from '@/app/lib/api';
 import { MatchCard } from '@/app/components/MatchCard';
 import { SkeletonCard } from '@/app/components/Skeleton';
 import type { Match } from '@/app/lib/api';
 
+const apiFetcher = (url: string) =>
+  fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api${url}`).then(r => r.json());
+
 const GROUPS = ['All', 'Group A', 'Group B', 'Group C', 'Group D', 'Group E', 'Group F', 'Group G', 'Group H', 'Group I', 'Group J', 'Group K', 'Group L'];
-const STAGES = ['All Stages', 'group', 'round_of_32', 'round_of_16', 'quarterfinal', 'semifinal', 'final'];
 
 export default function PredictionsPage() {
   const [group, setGroup] = useState('All');
   const [search, setSearch] = useState('');
 
   const url = group === 'All' ? '/matches' : `/matches?group=${encodeURIComponent(group)}`;
-  const { data, isLoading } = useSWR<{ matches: Match[]; total: number }>(url, fetcher);
+  const { data, isLoading } = useSWR<{ matches: Match[]; total: number }>(url, apiFetcher);
 
   const matches = (data?.matches ?? []).filter(m => {
     if (!search) return true;
@@ -24,15 +25,11 @@ export default function PredictionsPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-6 md:px-8 py-12">
-      {/* Header */}
       <div className="mb-8">
         <h1 className="font-head font-extrabold text-3xl mb-1">Match Predictions</h1>
-        <p className="text-subtle text-[14px]">
-          AI-generated win probabilities for all 104 FIFA World Cup 2026 matches
-        </p>
+        <p className="text-subtle text-[14px]">AI-generated win probabilities for all 104 FIFA World Cup 2026 matches</p>
       </div>
 
-      {/* Controls */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <input
           className="bg-surface border border-border2 rounded-xl px-4 py-2.5 text-[14px] text-white placeholder-muted outline-none focus:border-primary/50 w-full sm:w-72 transition-colors"
@@ -45,7 +42,6 @@ export default function PredictionsPage() {
         </div>
       </div>
 
-      {/* Group filter pills */}
       <div className="flex gap-2 flex-wrap mb-8 overflow-x-auto pb-1">
         {GROUPS.map(g => (
           <button
@@ -62,7 +58,6 @@ export default function PredictionsPage() {
         ))}
       </div>
 
-      {/* Match grid */}
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {[...Array(9)].map((_, i) => <SkeletonCard key={i} />)}

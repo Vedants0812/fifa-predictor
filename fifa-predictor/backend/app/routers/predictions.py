@@ -7,17 +7,17 @@ from app.ml.predictor import (
 )
 from typing import List
 import itertools
- 
+
 router = APIRouter()
- 
- 
+
+
 def to_py(val):
     """Convert any numpy scalar to a native Python type."""
     if hasattr(val, "item"):
         return val.item()
     return val
- 
- 
+
+
 def team_to_base(t: dict) -> dict:
     return {
         "id": str(t["id"]),
@@ -32,20 +32,20 @@ def team_to_base(t: dict) -> dict:
         "form": [str(r) for r in t["form"]],
         "confederation": str(t["confederation"]),
     }
- 
- 
+
+
 def build_match(mid, stage, group, date, ta, tb) -> dict:
     p_a, p_d, p_b = predict_probabilities(ta, tb)
     sa, sb = predict_score(ta, tb)
     max_p = max(p_a, p_b)
     underdog = bool(min(p_a, p_b) >= 38)   # explicit bool() kills numpy.bool_
- 
+
     form_diff = round(
         sum(3 if r == "W" else 1 if r == "D" else 0 for r in ta["form"][-5:]) -
         sum(3 if r == "W" else 1 if r == "D" else 0 for r in tb["form"][-5:]),
         2,
     )
- 
+
     return {
         "match_id": int(mid),
         "stage": str(stage),
@@ -68,8 +68,8 @@ def build_match(mid, stage, group, date, ta, tb) -> dict:
             "rank_diff": int(ta["fifa_rank"] - tb["fifa_rank"]),
         },
     }
- 
- 
+
+
 def build_group_matches() -> List[dict]:
     """Generate all 72 group-stage matches (12 groups × 6 per group)."""
     matches = []
@@ -83,8 +83,8 @@ def build_group_matches() -> List[dict]:
             matches.append(build_match(mid, "group", f"Group {group_name}", date, ta, tb))
             mid += 1
     return matches
- 
- 
+
+
 @router.get("/matches", summary="Get all group-stage match predictions")
 def get_all_matches(stage: str = None, group: str = None):
     matches = build_group_matches()
@@ -93,8 +93,8 @@ def get_all_matches(stage: str = None, group: str = None):
     if group:
         matches = [m for m in matches if (m.get("group") or "").lower() == group.lower()]
     return {"total": len(matches), "matches": matches}
- 
- 
+
+
 @router.post("/predict-match", summary="Predict a specific match")
 def predict_match(req: PredictRequest):
     ta = TEAMS.get(req.team_a_id)
@@ -103,11 +103,11 @@ def predict_match(req: PredictRequest):
         raise HTTPException(404, f"Team '{req.team_a_id}' not found")
     if not tb:
         raise HTTPException(404, f"Team '{req.team_b_id}' not found")
- 
+
     p_a, p_d, p_b = predict_probabilities(ta, tb, req.neutral_venue)
     sa, sb = predict_score(ta, tb)
     max_p = max(p_a, p_b)
- 
+
     return {
         "match_id": 0,
         "stage": str(req.stage),
