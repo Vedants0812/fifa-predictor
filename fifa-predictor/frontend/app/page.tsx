@@ -1,23 +1,19 @@
+'use client';
 import Link from 'next/link';
+import { useState, useEffect } from 'react';
 import { MatchCard } from '@/app/components/MatchCard';
 import type { Match } from '@/app/lib/api';
 
-export const revalidate = 3600;
+export default function HomePage() {
+  const [featured, setFeatured] = useState<Match[]>([]);
 
-async function getFeaturedMatches(): Promise<Match[]> {
-  try {
-    const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-    const res = await fetch(`${base}/api/matches?group=Group%20A`, { next: { revalidate: 3600 } });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return (data.matches ?? []).slice(0, 4);
-  } catch {
-    return [];
-  }
-}
-
-export default async function HomePage() {
-  const featured = await getFeaturedMatches();
+  useEffect(() => {
+    const base = process.env.NEXT_PUBLIC_API_URL || '';
+    fetch(`${base}/api/matches?group=Group%20A`)
+      .then(r => r.ok ? r.json() : { matches: [] })
+      .then(d => setFeatured((d.matches ?? []).slice(0, 4)))
+      .catch(() => {});
+  }, []);
 
   return (
     <>
@@ -65,13 +61,13 @@ export default async function HomePage() {
         <h2 className="font-head font-bold text-xl mb-4">104 Match Breakdown</h2>
         <div className="bg-surface border border-border2 rounded-2xl overflow-hidden">
           {[
-            { stage: 'Group Stage', matches: 72, desc: '12 groups × 6 matches each' },
-            { stage: 'Round of 32', matches: 16, desc: '32 qualifiers → 16 teams' },
-            { stage: 'Round of 16', matches: 8, desc: '16 teams → 8 teams' },
-            { stage: 'Quarterfinals', matches: 4, desc: '8 teams → 4 teams' },
-            { stage: 'Semifinals', matches: 2, desc: '4 teams → 2 finalists' },
-            { stage: 'Third Place', matches: 1, desc: 'Bronze medal playoff' },
-            { stage: 'Final', matches: 1, desc: 'World Cup Champion crowned' },
+            { stage: 'Group Stage',   matches: 72, desc: '12 groups × 6 matches each' },
+            { stage: 'Round of 32',   matches: 16, desc: '32 qualifiers → 16 teams' },
+            { stage: 'Round of 16',   matches: 8,  desc: '16 teams → 8 teams' },
+            { stage: 'Quarterfinals', matches: 4,  desc: '8 teams → 4 teams' },
+            { stage: 'Semifinals',    matches: 2,  desc: '4 teams → 2 finalists' },
+            { stage: 'Third Place',   matches: 1,  desc: 'Bronze medal playoff' },
+            { stage: 'Final',         matches: 1,  desc: 'World Cup Champion crowned' },
           ].map((row, i) => (
             <div key={row.stage} className={`flex items-center justify-between px-5 py-3.5 ${i > 0 ? 'border-t border-border' : ''} hover:bg-surface2 transition-colors`}>
               <div>
@@ -89,20 +85,26 @@ export default async function HomePage() {
       </section>
 
       {/* Featured matches */}
-      {featured.length > 0 && (
-        <section className="max-w-5xl mx-auto px-6 md:px-8 mb-20">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="font-head font-bold text-xl">Featured Matches</h2>
-              <p className="text-[13px] text-muted mt-0.5">Group A AI predictions</p>
-            </div>
-            <Link href="/predictions" className="text-primary text-[13px] hover:underline">All matches →</Link>
+      <section className="max-w-5xl mx-auto px-6 md:px-8 mb-20">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="font-head font-bold text-xl">Featured Matches</h2>
+            <p className="text-[13px] text-muted mt-0.5">Group A AI predictions</p>
           </div>
+          <Link href="/predictions" className="text-primary text-[13px] hover:underline">All matches →</Link>
+        </div>
+        {featured.length === 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="bg-surface border border-border2 rounded-2xl h-64 skeleton" />
+            ))}
+          </div>
+        ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {featured.map((m: Match) => <MatchCard key={m.match_id} match={m} />)}
           </div>
-        </section>
-      )}
+        )}
+      </section>
     </>
   );
 }
